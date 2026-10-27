@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Конфигуратор кабеля</title>
+  <style>
+    :root {
+      --bg-start: #1e3a8a;
+      --bg-end: #f8fafc;
+      --white: #ffffff;
+      --text: #1a242d;
+      --border: #e5e7eb;
+      --hover-blue: #dbeafe;
+      --active-blue: #2563eb;
+      --active-bg: #eff6ff;
+      --input-bg: #f3f4f6;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(180deg, var(--bg-start), var(--bg-end));
+      color: var(--text);
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+      color: #4b5563;
+    }
+
+    /* Кнопки */
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .config-btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 10px 15px;
+      border: 1px solid var(--border);
+      background: var(--white);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .config-btn:hover {
+      border-color: var(--active-blue);
+      background: var(--hover-blue);
+      color: var(--active-blue);
+    }
+
+    .config-btn.active {
+      border-color: var(--active-blue);
+      background: var(--active-bg);
+      color: var(--active-blue);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Сетка для блоков 3 и 4 */
+    .connectors-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    /* Поля ввода */
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 25px;
+    }
+    
+    .input-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      background: var(--input-bg);
+      color: var(--text);
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--active-blue);
+      background: var(--white);
+    }
+
+    .error-msg {
+      color: #ef4444;
+      font-size: 12px;
+      display: none;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h3>Тип кабеля</h3>
+    <div class="btn-group" id="block-cable">
+      <button class="config-btn" data-val="simplex">Симплекс</button>
+      <button class="config-btn" data-val="duplex">Дуплекс</button>
+    </div>
+
+    <h3>Тип волокна</h3>
+    <div class="btn-group" id="block-fiber">
+      <button class="config-btn" data-val="sm">SM</button>
+      <button class="config-btn" data-val="mm504">MM504</button>
+    </div>
+
+    <!-- Блоки 3 и 4 в сетке -->
+    <div class="connectors-row">
+      <div>
+        <h3>Левый коннектор</h3>
+        <div class="btn-group" id="block-left">
+          <button class="config-btn" data-val="fc">FC</button>
+          <button class="config-btn" data-val="lc">LC</button>
+        </div>
+      </div>
+
+      <div>
+        <h3>Правый коннектор</h3>
+        <div class="btn-group" id="block-right">
+          <button class="config-btn" data-val="fc">FC</button>
+          <button class="config-btn" data-val="lc">LC</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Блок 5: Длина -->
+    <h3>Длина (м)</h3>
+    <input type="number" id="lengthInput" step="0.01" min="0.1" placeholder="Например: 3 или 3.5" style="width: 200px;">
+    <div id="lengthError" class="error-msg">Введите корректное число (длина должна быть больше 0)</div>
+
+    <!-- Блоки 6 и 7 в сетке -->
+    <div class="input-row" style="margin-top: 30px;">
+      <div class="input-block">
+        <label for="articleInput">Артикул</label>
+        <input type="text" id="articleInput" readonly placeholder="Здесь появится артикул">
+      </div>
+      
+      <div class="input-block">
+        <label for="priceInput">Цена (₽)</label>
+        <input type="text" id="priceInput" readonly placeholder="Здесь появится цена">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Инициализация элементов ---
+    const cableBtns = document.querySelectorAll('#block-cable .config-btn');
+    const fiberBtns = document.querySelectorAll('#block-fiber .config-btn');
+    const leftBtns = document.querySelectorAll('#block-left .config-btn');
+    const rightBtns = document.querySelectorAll('#block-right .config-btn');
+    
+    const lengthInput = document.getElementById('lengthInput');
+    const articleInput = document.getElementById('articleInput');
+    const priceInput = document.getElementById('priceInput');
+    const lengthError = document.getElementById('lengthError');
+
+    // Состояние выбора
+    let state = {
+      cable: null,      // simplex / duplex
+      fiber: null,      // sm / mm504
+      leftConn: null,   // fc / lc
+      rightConn: null,  // fc / lc
+      length: null      // число
+    };
+
+    // --- Вспомогательные функции ---
+    function clearActive(buttons) {
+      buttons.forEach(btn => btn.classList.remove('active'));
+    }
+
+    function updateResult() {
+      // Проверка: все ли поля заполнены?
+      if (!state.cable || !state.fiber || !state.leftConn || !state.rightConn || state.length === null) {
+        articleInput.value = '';
+        priceInput.value = '';
+        return;
+      }
+
+      // 1. Формирование артикула
+      let partCable = state.cable === 'simplex' ? '3.0' : '2x3.0';
+      
+      // Логика коннекторов
+      const prefix = state.cable === 'duplex' ? '2' : '';
+      const leftConnStr = `${prefix}${state.leftConn.toUpperCase()}/U`;
+      const rightConnStr = `${prefix}${state.rightConn.toUpperCase()}/U`;
+      
+      const fiberStr = state.fiber === 'sm' ? 'SM' : 'MM504';
+      const colorStr = state.fiber === 'sm' ? 'YL' : 'MG';
+      
+      // Форматирование длины для артикула (убираем лишние нули, если целое)
+      const lenDisplay = Number(state.length) % 1 === 0 ? Number(state.length).toString() : state.length.toString();
+      
+      const article = `ШОС-${partCable}-${leftConnStr}-${rightConnStr}-${fiberStr}-${lenDisplay}м-LSZH-${colorStr}`;
+      articleInput.value = article;
+
+      // 2. Расчет цены
+      const lengthVal = parseFloat(state.length);
+      const basePrice = 90; // Курс/коэффициент
+      
+      let unitCost = 0;
+      
+      if (state.fiber === 'sm') {
+        // SM: (длина * 0.075 + 1.4) * 90
+        unitCost = (lengthVal * 0.075 + 1.4) * basePrice;
+      } else {
+        // MM504: (длина * 0.21 + 1.4) * 90
+        unitCost = (lengthVal * 0.21 + 1.4) * basePrice;
+      }
+      
+      // Если дуплекс, умножаем на 2
+      if (state.cable === 'duplex') {
+        unitCost *= 2;
+      }
+      
+      priceInput.value = unitCost.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) + ' ₽';
+    }
+
+    // --- Обработчики событий ---
+
+    // 1. Тип кабеля
+    cableBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        clearActive(cableBtns);
+        btn.classList.add('active');
+        state.cable = btn.dataset.val;
+        updateResult();
+      });
+    });
+
+    // 2. Тип волокна
+    fiberBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        clearActive(fiberBtns);
+        btn.classList.add('active');
+        state.fiber = btn.dataset.val;
+        updateResult();
+      });
+    });
+
+    // 3. Левый коннектор
+    leftBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        clearActive(leftBtns);
+        btn.classList.add('active');
+        state.leftConn = btn.dataset.val;
+        updateResult();
+      });
+    });
+
+    // 4. Правый коннектор
+    rightBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        clearActive(rightBtns);
+        btn.classList.add('active');
+        state.rightConn = btn.dataset.val;
+        updateResult();
+      });
+    });
+
+    // 5. Длина (числовое поле)
+    lengthInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+      lengthError.style.display = 'none';
+
+      if (val === '') {
+        state.length = null;
+        updateResult();
+        return;
+      }
+
+      const num = parseFloat(val);
+      if (isNaN(num) || num <= 0) {
+        lengthError.style.display = 'block';
+        state.length = null;
+      } else {
+        state.length = num;
+      }
+      updateResult();
+    });
+  </script>
+</body>
+</html>
